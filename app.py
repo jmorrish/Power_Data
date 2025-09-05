@@ -96,8 +96,6 @@ with col_load:
 
 with col_data:
     st.header("Data Sources")
-    use_era5 = st.checkbox("Use ERA5 for Wind (requires CDS API)", False)
-    use_hycom = st.checkbox("Use HYCOM for Currents", True)
     use_cmems = st.checkbox("Use CMEMS for Currents (global, requires copernicusmarine login)", False)
     cmems_dataset_id = "cmems_mod_nws_phy-uv_my_7km-2D_PT1H-i"
     if use_cmems:
@@ -148,7 +146,7 @@ if st.button("Run Simulation", type="primary"):
         batt_params = BatteryParams(cap_Wh, dod, eta_rt, max_chg, max_dis)
         df, summary = run_point_sim(
             lat, lon, year, pv_params, wind_params, hydro_params, batt_params, load_kwh,
-            use_era5, use_hycom, use_cmems, uploaded_currents, use_manual_currents, mean_v, peak_v, cmems_dataset_id=cmems_dataset_id,
+            use_cmems, uploaded_currents, use_manual_currents, mean_v, peak_v, cmems_dataset_id=cmems_dataset_id,
             uploaded_solar=uploaded_solar, uploaded_wind=uploaded_wind,  # NEW
             use_pv=use_pv, use_wind=use_wind, use_hydro=use_hydro,  # NEW
             interference=interference  # NEW

@@ -1,4 +1,4 @@
-# Updated energy.py with correct CMEMS fetch
+# Updated energy.py with CMEMS fetch (removed ERA5 and HYCOM)
 
 import os
 import math
@@ -60,62 +60,6 @@ def fetch_nasa_power_hourly(lat: float, lon: float, start: str, end: str) -> pd.
         return df.tz_localize(tz)
     except Exception as e:
         raise RuntimeError(f"NASA POWER fetch failed: {str(e)}")
-
-def fetch_era5_point(lat: float, lon: float, year: int, cache_dir: str) -> Optional[pd.DataFrame]:
-    try:
-        import cdsapi
-    except ImportError:
-        return None
-    os.makedirs(cache_dir, exist_ok=True)
-    target = os.path.join(cache_dir, f"era5_{year}_{lat:.3f}_{lon:.3f}.nc")
-    if not os.path.exists(target):
-        c = cdsapi.Client()
-        c.retrieve(
-            "reanalysis-era5-single-levels",
-            {
-                "product_type": "reanalysis",
-                "variable": ["10m_u_component_of_wind", "10m_v_component_of_wind"],
-                "year": str(year),
-                "month": list(map(lambda m: f"{m:02d}", range(1, 13))),
-                "day": list(map(lambda d: f"{d:02d}", range(1, 32))),
-                "time": list(map(lambda h: f"{h:02d}:00", range(24))),
-                "format": "netcdf",
-                "area": [lat + 0.05, lon - 0.05, lat - 0.05, lon + 0.05],
-            },
-            target,
-        )
-    ds = xr.open_dataset(target)
-    ds_pt = ds.sel(latitude=lat, longitude=lon % 360, method="nearest")
-    u = ds_pt["u10"].to_series()
-    v = ds_pt["v10"].to_series()
-    ws = np.sqrt(u**2 + v**2)
-    df = pd.DataFrame({"WS10M": ws})
-    df.index = pd.to_datetime(df.index).tz_localize("UTC")
-    return df
-
-def fetch_hycom_surface_current(lat: float, lon: float, start: str, end: str) -> Optional[pd.DataFrame]:
-    url = "https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0"
-    try:
-        ds = xr.open_dataset(url, decode_times=False)
-        # Manual time decoding
-        if 'time' in ds.variables:
-            time_units = ds.time.attrs.get('units', 'hours since 2000-01-01 00:00:00')
-            ref_time = pd.to_datetime(time_units.split('since ')[1])
-            ds = ds.assign_coords(time=ref_time + pd.to_timedelta(ds.time.values, unit='h'))
-        lon360 = (lon + 360) % 360
-        t0 = np.datetime64(pd.to_datetime(start))
-        t1 = np.datetime64(pd.to_datetime(end))
-        ds = ds.sel(time=slice(t0, t1))
-        ds_pt = ds.sel(lat=lat, lon=lon360, depth=0, method="nearest")
-        u = ds_pt["water_u"].to_series()
-        v = ds_pt["water_v"].to_series()
-        spd = np.sqrt(u**2 + v**2)
-        out = pd.DataFrame({"CURR_U": u, "CURR_V": v, "CURR_SPD": spd})
-        out.index = pd.to_datetime(out.index).tz_localize("UTC")
-        return resample_hourly(out)  # Interpolate 3-hr to hourly
-    except Exception as e:
-        print(f"HYCOM fetch failed: {str(e)}")
-        return None
 
 def fetch_cmems_surface_current(lat: float, lon: float, start: str, end: str, cache_dir: str, dataset_id: str) -> Optional[pd.DataFrame]:
     try:
@@ -323,8 +267,6 @@ def run_point_sim(
     lat: float, lon: float, year: int,
     pv: PVParams, wind: WindParams, hydro: HydroParams, batt: BatteryParams,
     load_kwh_per_day: float = 0.0,
-    use_era5: bool = False,
-    use_hycom: bool = True,
     use_cmems: bool = False,
     uploaded_currents: Optional[pd.DataFrame] = None,
     use_manual_currents: bool = False,
@@ -355,12 +297,8 @@ def run_point_sim(
             if col in uploaded_solar.columns:
                 met_local[col] = uploaded_solar[col]
     
-    # Set ws10, potentially from ERA5
-    if use_era5:
-        era = fetch_era5_point(lat, lon, year, cache_dir)
-        ws10 = era["WS10M"].tz_convert(tz).reindex(met_local.index).interpolate(method='time').ffill().bfill() if era is not None else met_local["WS10M"]
-    else:
-        ws10 = met_local["WS10M"]
+    # Set ws10 from NASA POWER (no ERA5)
+    ws10 = met_local["WS10M"]
     
     # NEW: Override ws10 with uploaded wind data if provided
     if uploaded_wind is not None:
@@ -386,7 +324,7 @@ def run_point_sim(
     if interference:
         wind_p[pv_ac > 50] = 0.0
     
-    # Currents priority: Uploaded > Manual > CMEMS > HYCOM > 0
+    # Currents priority: Uploaded > Manual > CMEMS > 0
     if uploaded_currents is not None:
         cur_spd = uploaded_currents["CURR_SPD"].reindex(pv_ac.index).interpolate()
         print("Using uploaded currents.")
@@ -395,9 +333,6 @@ def run_point_sim(
         print("Using synthetic manual currents.")
     elif use_cmems:
         cur = fetch_cmems_surface_current(lat, lon, start, end, cache_dir, dataset_id=cmems_dataset_id)
-        cur_spd = cur["CURR_SPD"].tz_convert(tz).reindex(pv_ac.index).interpolate() if cur is not None else pd.Series(0.0, index=pv_ac.index)
-    elif use_hycom:
-        cur = fetch_hycom_surface_current(lat, lon, start, end)
         cur_spd = cur["CURR_SPD"].tz_convert(tz).reindex(pv_ac.index).interpolate() if cur is not None else pd.Series(0.0, index=pv_ac.index)
     else:
         cur_spd = pd.Series(0.0, index=pv_ac.index)
