@@ -244,7 +244,7 @@ def battery_dispatch(hourly_gen_w: pd.DataFrame, hourly_load_w: pd.Series, bp: B
             used_Wh = min(need_Wh, avail_Wh)
             soc -= used_Wh / eta_dis
             dis = used_Wh
-            unmet = max(-surplus - need_pwr, 0)
+            unmet = max(0, -surplus - dis)
         soc = np.clip(soc, 0, E_max)
         cycles += abs(soc - prev_soc) / (2 * E_max)
         prev_soc = soc
