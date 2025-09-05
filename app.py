@@ -102,8 +102,14 @@ with col_data:
         if st.button("Load Available CMEMS Datasets"):
             try:
                 import copernicusmarine
-                datasets = copernicusmarine.describe()['datasets']
-                available_datasets = [ds['dataset_id'] for ds in datasets if 'phy' in ds['dataset_id'].lower() and ('uo' in ds['variables'] or 'vo' in ds['variables'])]
+                catalogue = copernicusmarine.describe()
+                available_datasets = []
+                for product in catalogue.products:
+                    for dataset in product.datasets:
+                        if 'phy' in dataset.dataset_id.lower():
+                            variables = [var.short_name for var in dataset.versions[0].parts[0].services[0].variables]
+                            if 'uo' in variables or 'vo' in variables:
+                                available_datasets.append(dataset.dataset_id)
                 st.session_state['available_datasets'] = available_datasets
             except Exception as e:
                 st.error(f"Failed to load datasets: {str(e)}")
