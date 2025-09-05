@@ -10,9 +10,9 @@ from energy import (
     run_point_sim
 )
 
-st.set_page_config(page_title="Marine Hybrid Power MVP", layout="wide")
+st.set_page_config(page_title="Marine Hybrid Power Simulator", layout="wide")
 st.title("Marine Hybrid Power Simulator")
-st.caption("Professional tool for solar, wind, hydro on marine platforms with battery modeling.")
+st.caption("A tool for modelling solar, wind, hydrogeneration on marine platforms with batteries.")
 
 col_site, col_map = st.columns([1, 2])
 with col_site:
