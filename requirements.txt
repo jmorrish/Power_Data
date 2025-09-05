@@ -1,0 +1,14 @@
+streamlit>=1.37
+streamlit-folium>=0.22
+folium>=0.17
+pvlib>=0.10.5
+pandas>=2.1
+numpy>=1.26
+requests>=2.32
+pytz>=2024.1
+timezonefinder>=6.2
+xarray>=2024.3
+netCDF4>=1.6
+cdsapi>=0.6.1
+scipy>=1.11
+plotly>=5.23

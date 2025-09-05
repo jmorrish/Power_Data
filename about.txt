@@ -1,0 +1,123 @@
+### Overview of the Simulation
+
+The Marine Power MVP simulation models a hybrid renewable energy system for a marine platform, combining solar PV, small wind turbines, and hydrogenerators (tidal/current-based), with battery storage and a constant daily load. It runs an hourly time-series simulation over a full year for a user-specified location (lat/lon) and year. The core logic is in `energy.py`, orchestrated by `run_point_sim`.
+
+At a high level:
+- **Inputs**: Location, year, system parameters (e.g., panel wattage, tilt, battery capacity), data options (e.g., use ERA5 for wind).
+- **Process**: Fetch hourly meteorological/ocean data → Calculate hourly power from each source → Dispatch power to load/battery → Aggregate results.
+- **Assumptions**: Hourly steps (8760-8784 points/year); constant average daily load distributed evenly; no variable load profiles; simple dispatch (gen prioritizes load, then battery); starts battery at 50% SOC.
+- **Outputs**: Yearly kWh by source, exports/unmet load, battery metrics (SOC min/max, cycles), plots (hourly power/SOC, monthly energy, worst-week SOC), and CSV export.
+
+The simulation emphasizes accuracy for solar (using pvlib library) while keeping wind/hydro simpler (physics-based with user-defined curves/efficiencies). All calculations are vectorized where possible for efficiency using Pandas/NumPy.
+
+### 1. Data Acquisition
+
+The simulation pulls real-world hourly data for the specified year and location. Data is resampled to a clean hourly index if needed (e.g., filling small gaps via interpolation, forward/backfill). Timezone is set to Local Time Meridian (LTM, based on longitude) for solar alignment.
+
+- **Primary Source: NASA POWER (Always Used)**:
+  - Fetched via REST API for the point (lat/lon).
+  - Variables: Global Horizontal Irradiance (GHI, W/m²), Direct Normal Irradiance (DNI, W/m²), Diffuse Horizontal Irradiance (DHI, W/m²), air temperature at 2m (T2M_C, °C), wind speed at 10m (WS10M, m/s), pressure (PS_Pa, Pa), relative humidity (RH2M, %).
+  - Coverage: Global, historical (1984+) to near-real-time.
+  - Usage: Solar calculations rely on GHI/DNI/DHI; wind fallback uses WS10M; temp/wind for PV cell temp.
+
+- **Optional: ERA5 for Wind (If Enabled)**:
+  - Fetched via CDS API (requires user API key setup).
+  - Variables: 10m wind components (u10, v10) → Computed speed (sqrt(u² + v²)).
+  - Coverage: Global, hourly, better for offshore/marine (reanalysis data).
+  - Usage: Overrides NASA wind if available; cached as NetCDF for reuse.
+  - Why optional: Needs setup; NASA fallback ensures it runs without.
+
+- **Optional: HYCOM for Hydro Currents (If Enabled)**:
+  - Fetched via OPeNDAP from GLBy0.08/expt_93.0 (stable historical endpoint, 2018+).
+  - Variables: Surface water velocity (water_u, water_v) → Computed speed (sqrt(u² + v²), m/s).
+  - Coverage: Global oceans, 3-hourly (interpolated to hourly).
+  - Usage: Drives hydro power; falls back to 0 if fetch fails (e.g., pre-2018 years).
+  - Note: For older years, consider alternatives like CMEMS (not implemented).
+
+Data is localized to LTM timezone and indexed as Pandas DataFrame for calculations.
+
+### 2. Solar PV Power Calculation
+
+PV is the most detailed module, using pvlib for industry-standard modeling. Hourly power (W) is computed per panel, scaled by count, with losses.
+
+Steps (in `pv_power_hourly`):
+- **Solar Position**: Use pvlib to calculate apparent solar zenith and azimuth angles for each timestamp (based on lat/lon/time).
+- **Plane-of-Array (POA) Irradiance**:
+  - Input: GHI, DNI, DHI from data.
+  - Model: Perez transposition to compute total irradiance on tilted surface (user tilt/azimuth).
+  - Formula: POA = Direct (DNI projected) + Sky Diffuse (Perez model) + Ground Reflected (assumes albedo=0.2 default in pvlib).
+  - Requires: dni_extra (extraterrestrial DNI, computed via `pvlib.irradiance.get_extra_radiation(times)` for atmospheric correction).
+- **Cell Temperature**:
+  - Model: NOCT-SAM (Nominal Operating Cell Temperature, Sandia Array Model).
+  - Formula: T_cell = T_air + (POA / 800) * (NOCT - 20) * (1 - module_efficiency / 0.9)  (adjusted for wind; pvlib handles details).
+  - Inputs: POA irradiance, ambient temp (T_air), wind speed, user NOCT (°C), module efficiency (user % / 100).
+- **Panel Power**:
+  - Base: P_panel = Wp * (POA / 1000)  (STC normalization).
+  - Temp Adjustment: Multiply by (1 + gamma * (T_cell - 25)), where gamma is user temp coeff (%/°C / 100).
+- **System Power**:
+  - DC Array: P_dc = P_panel * count * (1 - dc_loss_frac) * (1 - misc_pr_frac).
+  - After MPPT/Charging: P_chg = P_dc * mppt_eff.
+  - AC Output: P_ac = P_chg * inv_eff (final hourly PV power).
+
+Clips negative values to 0. Typical output: Series of 8760 hourly W values.
+
+### 3. Wind Power Calculation
+
+Simpler empirical model for small turbines. Hourly power (W) based on wind speed and user-defined curve.
+
+Steps:
+- **Wind Speed at Hub Height**:
+  - Input: WS10M from data (ERA5 preferred).
+  - Shear: Log-law extrapolation: v_hub = v_10 * (log(hub_height / z0) / log(10 / z0)), where z0 is user roughness (e.g., 0.0002m for sea).
+  - Safety: Clip v_10 >=0.01; add epsilon to avoid log(0).
+- **Power Curve**:
+  - Below cut-in or above cut-out: 0 W.
+  - Ramp (cut-in to rated): P = rated_power * ((v - cut_in) / (rated - cut_in))³.
+  - Rated to cut-out: rated_power.
+  - Final: Multiply by system_eff * availability_frac.
+- Output: Hourly W series.
+
+### 4. Hydro (Tidal/Current) Power Calculation
+
+Physics-based for underwater turbines. Hourly power (W) from current speed.
+
+Steps:
+- **Current Speed**: From HYCOM CURR_SPD (m/s); fallback 0.
+- **Power Equation** (Betz limit):
+  - P = 0.5 * ρ * A * Cp * v³ * mech_elec_eff * availability_frac.
+  - ρ = 1025 kg/m³ (seawater).
+  - A = π * (rotor_diam / 2)² (swept area).
+  - Cp: User power coefficient (≤0.59).
+  - v: Clipped ≥0.
+- Output: Hourly W series.
+
+### 5. Battery and Load Dispatch
+
+Hourly loop simulates energy flow: Gen → Load → Battery (charge/discharge). Assumes constant load (daily kWh / 24, in W).
+
+Steps (in `battery_dispatch`, coulomb-counting style):
+- **Net Surplus/Deficit**: For each hour: surplus = total_gen (PV + wind + hydro) - load.
+- **If Surplus >0**:
+  - Charge power = min(surplus, max_charge_kW * 1000).
+  - Energy to battery: charge_Wh_eff = min(charge_Wh * eta_ch, headroom), where headroom = E_max - SOC, eta_ch = sqrt(roundtrip_eff).
+  - Update SOC += charge_Wh_eff.
+  - Export = surplus - charge_power.
+- **If Surplus <0 (Deficit)**:
+  - Discharge power = min(deficit, max_discharge_kW * 1000).
+  - Energy from battery: used_Wh = min(discharge_Wh, SOC * eta_dis), eta_dis = sqrt(roundtrip_eff).
+  - Update SOC -= used_Wh / eta_dis.
+  - Unmet = deficit - discharge_power.
+- **SOC Clamping**: SOC clipped to [0, E_max], where E_max = capacity_Wh * usable_DoD_frac.
+- **Cycles Approximation**: Cumulative |delta_SOC| / (2 * E_max) over hours (Dodson method for equivalent full cycles).
+- Starts at 50% SOC; no self-discharge modeled.
+
+### 6. Outputs and Aggregations
+
+After hourly series:
+- **Energies**: Sum hourly W to kWh ( /1000, since 1h steps).
+- **Battery Stats**: Min/max SOC %, approx cycles.
+- **Worst Week**: Rolling 168h (7d) mean SOC; find min mean window start.
+- **Plots**: Line for power/SOC; bar for monthly sums; line for worst week SOC.
+- **CSV**: Full DataFrame (gen sources, SOC, charge/discharge, unmet/export).
+
+This provides a comprehensive, physics-grounded estimate of system performance, useful for sizing/optimization. Limitations: No stochastic variability (e.g., multi-year P50/P90); assumes perfect components; constant load. For real projects, validate with on-site data.
