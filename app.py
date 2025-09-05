@@ -166,7 +166,7 @@ if st.button("Run Simulation", type="primary"):
     cols[2].metric("Hydro kWh/year", f"{summary['energy_kwh']['hydro']:.1f}")
     cols[3].metric("Total Gen kWh/year", f"{summary['energy_kwh']['total_gen']:.1f}")
     cols = st.columns(4)
-    cols[0].metric("Exports kWh/year", f"{summary['energy_kwh']['exports']:.1f}")
+    cols[0].metric("Excess kWh/year", f"{summary['energy_kwh']['exports']:.1f}")
     cols[1].metric("Unmet kWh/year", f"{summary['energy_kwh']['unmet']:.1f}")
     cols[2].metric("SOC Min (%)", f"{summary['battery']['soc_min_pct']:.1f}")
     cols[3].metric("SOC Max (%)", f"{summary['battery']['soc_max_pct']:.1f}")
