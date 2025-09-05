@@ -96,7 +96,7 @@ with col_load:
 
 with col_data:
     st.header("Data Sources")
-    use_cmems = st.checkbox("Use CMEMS for Currents (UK waters only, only change dataset if you know what you are doing)", False)
+    use_cmems = st.checkbox("Use CMEMS for Currents (UK waters only, only change dataset if you know what you are doing)", True)
     cmems_dataset_id = "cmems_mod_nws_phy-uv_my_7km-2D_PT1H-i"
     if use_cmems:
         if st.button("Load Available CMEMS Datasets"):
