@@ -4,7 +4,7 @@ st.set_page_config(page_title="About Marine Hybrid Power Simulator", layout="wid
 st.title("About Marine Hybrid Power Simulator")
 
 st.markdown("""
-Welcome to the **Marine Hybrid Power Simulator**, a professional tool for modeling hybrid renewable energy systems on marine platforms. The app evaluates solar PV, wind, hydrogenerators, and batteries against a constant daily load and provides year-long hourly results.
+Welcome to the **Marine Hybrid Power Simulator**, a tool for modeling hybrid renewable energy systems on marine platforms. The app evaluates solar PV, wind, hydrogenerators, and batteries against a constant daily load and provides year-long hourly results.
 """)
 
 st.markdown("""
