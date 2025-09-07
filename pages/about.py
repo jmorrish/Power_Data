@@ -3,19 +3,19 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
-def render_latex_as_image(formula, fontsize=14, dpi=300, text_color='white'):
-    fig = plt.figure(figsize=(len(formula)/10, 1))  # Adjust size based on formula length to reduce box size
+def render_latex_as_image(formula, fontsize=12, dpi=300, text_color='white'):
+    fig = plt.figure(figsize=(len(formula)/15, 0.5))  # Smaller dynamic size for better alignment and reduced box
     ax = fig.add_axes([0, 0, 1, 1])
     ax.text(0.5, 0.5, f'${formula}$', fontsize=fontsize, ha='center', va='center', color=text_color)
     ax.axis('off')
     fig.patch.set_visible(False)
     ax.patch.set_visible(False)
     buf = BytesIO()
-    fig.savefig(buf, format="png", dpi=dpi, bbox_inches='tight', pad_inches=0.05, transparent=True)
+    fig.savefig(buf, format="png", dpi=dpi, bbox_inches='tight', pad_inches=0.02, transparent=True)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode('utf-8')
     plt.close(fig)
-    return f'<div style="text-align: center;"><img src="data:image/png;base64,{img_str}" style="background-color: transparent;"></div>'
+    return f'<div style="text-align: center; margin: 10px 0;"><img src="data:image/png;base64,{img_str}" style="background-color: transparent; max-width: 100%; height: auto;"></div>'
 
 st.set_page_config(page_title="About Marine Hybrid Power Simulator", layout="wide")
 st.title("About Marine Hybrid Power Simulator")
