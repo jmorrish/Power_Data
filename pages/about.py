@@ -1,4 +1,18 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
+
+def render_latex_as_image(formula, fontsize=12, dpi=300):
+    fig = plt.figure()
+    plt.text(0.5, 0.5, f'${formula}$', fontsize=fontsize, ha='center', va='center')
+    plt.axis('off')
+    buf = BytesIO()
+    fig.savefig(buf, format="png", dpi=dpi, bbox_inches='tight', pad_inches=0.1)
+    buf.seek(0)
+    img_str = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close(fig)
+    return f'<img src="data:image/png;base64,{img_str}" style="display: block; margin-left: auto; margin-right: auto;">'
 
 st.set_page_config(page_title="About Marine Hybrid Power Simulator", layout="wide")
 st.title("About Marine Hybrid Power Simulator")
@@ -17,7 +31,7 @@ The app assumes a constant daily load (your input kWh divided evenly over 24 hou
 
 ## How the Metrics Are Calculated
 Below, we explain each metric shown in the "Key Metrics" section, including what it means and the mathematical formulas used. These are based on standard renewable energy models and hourly simulations.
-""")
+""", unsafe_allow_html=True)
 
 st.subheader("1. PV kWh/year")
 st.markdown("""
@@ -26,26 +40,26 @@ st.markdown("""
 **How It's Calculated**:
 - Uses sunlight data (Global Horizontal Irradiance, Direct Normal Irradiance, and Diffuse Horizontal Irradiance, in W/m²) adjusted for panel tilt (θ) and azimuth (φ).
 - Cell temperature (T_cell, °C):
-""")
-st.latex(r"T_{\text{cell}} = T_{\text{air}} + \frac{\text{POA}_{\text{global}} \cdot (\text{NOCT} - 20)}{800}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"T_{\text{cell}} = T_{\text{air}} + \frac{\text{POA}_{\text{global}} \cdot (\text{NOCT} - 20)}{800}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Power per panel (W):
-""")
-st.latex(r"P_{\text{panel}} = W_p \cdot \frac{\text{POA}_{\text{global}}}{1000} \cdot \left(1 + \frac{\gamma}{100} \cdot (T_{\text{cell}} - 25)\right)")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{panel}} = W_p \cdot \frac{\text{POA}_{\text{global}}}{1000} \cdot \left(1 + \frac{\gamma}{100} \cdot (T_{\text{cell}} - 25)\right)", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Fouling reduction (if enabled):
-""")
-st.latex(r"\text{Fouling_pct} = \text{fouled_min_pct} + (\text{fouled_max_pct} - \text{fouled_min_pct}) \cdot \frac{\text{cycle_position}}{\text{cleaning_cycle_days}}")
-st.latex(r"P_{\text{panel}} = P_{\text{panel}} \cdot \left(1 - \frac{\text{Fouling_pct}}{100}\right)")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Fouling_pct} = \text{fouled_min_pct} + (\text{fouled_max_pct} - \text{fouled_min_pct}) \cdot \frac{\text{cycle_position}}{\text{cleaning_cycle_days}}", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{panel}} = P_{\text{panel}} \cdot \left(1 - \frac{\text{Fouling_pct}}{100}\right)", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - System losses:
-""")
-st.latex(r"P_{\text{DC}} = P_{\text{panel}} \cdot N_{\text{panels}} \cdot (1 - \text{dc_loss_frac}) \cdot (1 - \text{misc_pr_frac})")
-st.latex(r"P_{\text{AC}} = P_{\text{DC}} \cdot \text{mppt_eff} \cdot \text{inv_eff}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{DC}} = P_{\text{panel}} \cdot N_{\text{panels}} \cdot (1 - \text{dc_loss_frac}) \cdot (1 - \text{misc_pr_frac})", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{AC}} = P_{\text{DC}} \cdot \text{mppt_eff} \cdot \text{inv_eff}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Annual total:
-""")
-st.latex(r"\text{PV kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{AC},h}}{1000}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{PV kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{AC},h}}{1000}", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("2. Wind kWh/year")
 st.markdown("""
@@ -53,24 +67,24 @@ st.markdown("""
 
 **How It's Calculated**:
 - Wind speed adjustment to hub height:
-""")
-st.latex(r"v_{\text{hub}} = v_{10} \cdot \frac{\log\left(\frac{h + \epsilon}{z_0 + \epsilon}\right)}{\log\left(\frac{10}{z_0 + \epsilon}\right)}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"v_{\text{hub}} = v_{10} \cdot \frac{\log\left(\frac{h + \epsilon}{z_0 + \epsilon}\right)}{\log\left(\frac{10}{z_0 + \epsilon}\right)}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Power curve:
   - If v_hub < v_cut_in or v_hub > v_cut_out: P = 0
   - If v_cut_in ≤ v_hub < v_rated:
-""")
-st.latex(r"P = P_{\text{rated}} \cdot \left( \frac{v_{\text{hub}} - v_{\text{cut_in}}}{v_{\text{rated}} - v_{\text{cut_in}}} \right)^3")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P = P_{\text{rated}} \cdot \left( \frac{v_{\text{hub}} - v_{\text{cut_in}}}{v_{\text{rated}} - v_{\text{cut_in}}} \right)^3", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
   - If v_rated ≤ v_hub ≤ v_cut_out: P = P_rated
 - Apply efficiencies:
-""")
-st.latex(r"P_{\text{wind}} = P \cdot \text{air_system_eff} \cdot \text{availability_frac} \cdot N_{\text{turbines}}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{wind}} = P \cdot \text{air_system_eff} \cdot \text{availability_frac} \cdot N_{\text{turbines}}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - (Interference: P_wind = 0 if solar > 50W.)
 - Annual total:
-""")
-st.latex(r"\text{Wind kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{wind},h}}{1000}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Wind kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{wind},h}}{1000}", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("3. Hydro kWh/year")
 st.markdown("""
@@ -78,16 +92,16 @@ st.markdown("""
 
 **How It's Calculated**:
 - Synthetic currents (if used):
-""")
-st.latex(r"v_{\text{current}} = \text{mean_v} + (\text{peak_v} - \text{mean_v}) \cdot \sin\left( \frac{2\pi \cdot t}{12.42 \cdot 3600} \right)")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"v_{\text{current}} = \text{mean_v} + (\text{peak_v} - \text{mean_v}) \cdot \sin\left( \frac{2\pi \cdot t}{12.42 \cdot 3600} \right)", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Power:
-""")
-st.latex(r"P_{\text{hydro}} = 0.5 \cdot 1025 \cdot \pi \cdot \left(\frac{\text{rotor_diam_m}}{2}\right)^2 \cdot \text{Cp} \cdot v_{\text{current}}^3 \cdot \text{mech_elec_eff} \cdot \text{availability_frac} \cdot N_{\text{generators}}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{hydro}} = 0.5 \cdot 1025 \cdot \pi \cdot \left(\frac{\text{rotor_diam_m}}{2}\right)^2 \cdot \text{Cp} \cdot v_{\text{current}}^3 \cdot \text{mech_elec_eff} \cdot \text{availability_frac} \cdot N_{\text{generators}}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Annual total:
-""")
-st.latex(r"\text{Hydro kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{hydro},h}}{1000}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Hydro kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{hydro},h}}{1000}", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("4. Total Gen kWh/year")
 st.markdown("""
@@ -95,12 +109,12 @@ st.markdown("""
 
 **How It's Calculated**:
 - Hourly total:
-""")
-st.latex(r"P_{\text{total},h} = P_{\text{AC},h} + P_{\text{wind},h} + P_{\text{hydro},h}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"P_{\text{total},h} = P_{\text{AC},h} + P_{\text{wind},h} + P_{\text{hydro},h}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Annual total:
-""")
-st.latex(r"\text{Total Gen kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{total},h}}{1000}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Total Gen kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{total},h}}{1000}", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("5. Excess kWh/year")
 st.markdown("""
@@ -108,20 +122,20 @@ st.markdown("""
 
 **How It's Calculated**:
 - Hourly surplus:
-""")
-st.latex(r"\text{surplus}_h = P_{\text{total},h} - \text{load}_h")
-st.markdown("where \\( \\text{load}_h = \\frac{\\text{load_kwh_per_day} \\cdot 1000}{24} \\).")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{surplus}_h = P_{\text{total},h} - \text{load}_h", fontsize=14), unsafe_allow_html=True)
+st.markdown("where load_h = (load_kwh_per_day · 1000) / 24.")
 st.markdown("""
 - If surplus > 0:
-""")
-st.latex(r"\text{chg_pwr}_h = \min(\text{surplus}_h, \text{max_charge_kW} \cdot 1000)")
-st.latex(r"\text{chg_Wh}_h = \text{chg_pwr}_h \cdot 1")
-st.latex(r"\text{chg_Wh_eff}_h = \min(\text{chg_Wh}_h \cdot \sqrt{\text{eta_roundtrip}}, E_{\text{max}} - \text{SOC}_h)")
-st.latex(r"\text{excess}_h = \text{surplus}_h - \text{chg_pwr}_h")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{chg_pwr}_h = \min(\text{surplus}_h, \text{max_charge_kW} \cdot 1000)", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{chg_Wh}_h = \text{chg_pwr}_h \cdot 1", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{chg_Wh_eff}_h = \min(\text{chg_Wh}_h \cdot \sqrt{\text{eta_roundtrip}}, E_{\text{max}} - \text{SOC}_h)", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{excess}_h = \text{surplus}_h - \text{chg_pwr}_h", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Annual total:
-""")
-st.latex(r"\text{Excess kWh/year} = \frac{\sum_{h=1}^{8760} \text{excess}_h}{1000}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Excess kWh/year} = \frac{\sum_{h=1}^{8760} \text{excess}_h}{1000}", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("6. Unmet kWh/year")
 st.markdown("""
@@ -129,29 +143,29 @@ st.markdown("""
 
 **How It's Calculated**:
 - If surplus < 0:
-""")
-st.latex(r"\text{need_pwr}_h = \min(-\text{surplus}_h, \text{max_discharge_kW} \cdot 1000)")
-st.latex(r"\text{need_Wh}_h = \text{need_pwr}_h \cdot 1")
-st.latex(r"\text{used_Wh}_h = \min(\text{need_Wh}_h, \text{SOC}_h \cdot \sqrt{\text{eta_roundtrip}})")
-st.latex(r"\text{dis}_h = \text{used_Wh}_h")
-st.latex(r"\text{unmet}_h = \max(0, -\text{surplus}_h - \text{dis}_h)")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{need_pwr}_h = \min(-\text{surplus}_h, \text{max_discharge_kW} \cdot 1000)", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{need_Wh}_h = \text{need_pwr}_h \cdot 1", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{used_Wh}_h = \min(\text{need_Wh}_h, \text{SOC}_h \cdot \sqrt{\text{eta_roundtrip}})", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{dis}_h = \text{used_Wh}_h", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{unmet}_h = \max(0, -\text{surplus}_h - \text{dis}_h)", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Annual total:
-""")
-st.latex(r"\text{Unmet kWh/year} = \frac{\sum_{h=1}^{8760} \text{unmet}_h}{1000}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Unmet kWh/year} = \frac{\sum_{h=1}^{8760} \text{unmet}_h}{1000}", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("7. SOC Min (%)")
 st.markdown("""
 **What It Means**: The lowest battery charge level (percentage) during the year.
 
 **How It's Calculated**:
-""")
-st.latex(r"E_{\text{max}} = \text{capacity_Wh} \cdot \text{usable_DoD_frac}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"E_{\text{max}} = \text{capacity_Wh} \cdot \text{usable_DoD_frac}", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - Update SOC hourly (clipped to [0, E_max]).
-""")
-st.latex(r"\text{SOC_frac}_h = \frac{\text{SOC}_h}{E_{\text{max}}}")
-st.latex(r"\text{SOC Min (%)} = \min_{h=1}^{8760} (\text{SOC_frac}_h \cdot 100)")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{SOC_frac}_h = \frac{\text{SOC}_h}{E_{\text{max}}}", fontsize=14), unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{SOC Min (%)} = \min_{h=1}^{8760} (\text{SOC_frac}_h \cdot 100)", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("8. SOC Max (%)")
 st.markdown("""
@@ -159,8 +173,8 @@ st.markdown("""
 
 **How It's Calculated**:
 - Same as SOC Min:
-""")
-st.latex(r"\text{SOC Max (%)} = \max_{h=1}^{8760} (\text{SOC_frac}_h \cdot 100)")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{SOC Max (%)} = \max_{h=1}^{8760} (\text{SOC_frac}_h \cdot 100)", fontsize=14), unsafe_allow_html=True)
 
 st.subheader("9. Approx Cycles/year")
 st.markdown("""
@@ -168,12 +182,12 @@ st.markdown("""
 
 **How It's Calculated**:
 - Hourly change:
-""")
-st.latex(r"\Delta \text{SOC}_h = |\text{SOC}_h - \text{SOC}_{h-1}|")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\Delta \text{SOC}_h = |\text{SOC}_h - \text{SOC}_{h-1}|", fontsize=14), unsafe_allow_html=True)
 st.markdown("""
 - 
-""")
-st.latex(r"\text{Approx Cycles/year} = \sum_{h=1}^{8760} \frac{\Delta \text{SOC}_h}{2 \cdot E_{\text{max}}}")
+""", unsafe_allow_html=True)
+st.markdown(render_latex_as_image(r"\text{Approx Cycles/year} = \sum_{h=1}^{8760} \frac{\Delta \text{SOC}_h}{2 \cdot E_{\text{max}}}", fontsize=14), unsafe_allow_html=True)
 
 st.markdown("""
 ## Data Sources and Assumptions
@@ -182,4 +196,4 @@ st.markdown("""
 - **Customization**: Disable sources or add interference for realistic scenarios.
 
 This simulator is built for accuracy and ease—contact us for customizations or questions!
-""")
+""", unsafe_allow_html=True)
