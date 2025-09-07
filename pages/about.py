@@ -20,101 +20,159 @@ Below, we explain each metric shown in the "Key Metrics" section, including what
 """)
 
 st.subheader("1. PV kWh/year")
-st.markdown("**What It Means**: The total energy (in kilowatt-hours, kWh) produced by your solar panels over one year.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Uses sunlight data (Global Horizontal Irradiance, Direct Normal Irradiance, and Diffuse Horizontal Irradiance, in W/m²) adjusted for panel tilt (θ) and azimuth (φ).")
-st.markdown("- Cell temperature (T_cell, °C):")
+st.markdown("""
+**What It Means**: The total energy (in kilowatt-hours, kWh) produced by your solar panels over one year.
+
+**How It's Calculated**:
+- Uses sunlight data (Global Horizontal Irradiance, Direct Normal Irradiance, and Diffuse Horizontal Irradiance, in W/m²) adjusted for panel tilt (θ) and azimuth (φ).
+- Cell temperature (T_cell, °C):
+""")
 st.latex(r"T_{\text{cell}} = T_{\text{air}} + \frac{\text{POA}_{\text{global}} \cdot (\text{NOCT} - 20)}{800}")
-st.markdown("- Power per panel (W):")
+st.markdown("""
+- Power per panel (W):
+""")
 st.latex(r"P_{\text{panel}} = W_p \cdot \frac{\text{POA}_{\text{global}}}{1000} \cdot \left(1 + \frac{\gamma}{100} \cdot (T_{\text{cell}} - 25)\right)")
-st.markdown("- Fouling reduction (if enabled):")
+st.markdown("""
+- Fouling reduction (if enabled):
+""")
 st.latex(r"\text{Fouling_pct} = \text{fouled_min_pct} + (\text{fouled_max_pct} - \text{fouled_min_pct}) \cdot \frac{\text{cycle_position}}{\text{cleaning_cycle_days}}")
 st.latex(r"P_{\text{panel}} = P_{\text{panel}} \cdot \left(1 - \frac{\text{Fouling_pct}}{100}\right)")
-st.markdown("- System losses:")
+st.markdown("""
+- System losses:
+""")
 st.latex(r"P_{\text{DC}} = P_{\text{panel}} \cdot N_{\text{panels}} \cdot (1 - \text{dc_loss_frac}) \cdot (1 - \text{misc_pr_frac})")
 st.latex(r"P_{\text{AC}} = P_{\text{DC}} \cdot \text{mppt_eff} \cdot \text{inv_eff}")
-st.markdown("- Annual total:")
+st.markdown("""
+- Annual total:
+""")
 st.latex(r"\text{PV kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{AC},h}}{1000}")
 
 st.subheader("2. Wind kWh/year")
-st.markdown("**What It Means**: The total energy (in kWh) produced by your wind turbine(s) over one year.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Wind speed adjustment to hub height:")
+st.markdown("""
+**What It Means**: The total energy (in kWh) produced by your wind turbine(s) over one year.
+
+**How It's Calculated**:
+- Wind speed adjustment to hub height:
+""")
 st.latex(r"v_{\text{hub}} = v_{10} \cdot \frac{\log\left(\frac{h + \epsilon}{z_0 + \epsilon}\right)}{\log\left(\frac{10}{z_0 + \epsilon}\right)}")
-st.markdown("- Power curve:")
-st.markdown("  - If v_hub < v_cut_in or v_hub > v_cut_out: P = 0")
-st.markdown("  - If v_cut_in ≤ v_hub < v_rated:")
+st.markdown("""
+- Power curve:
+  - If v_hub < v_cut_in or v_hub > v_cut_out: P = 0
+  - If v_cut_in ≤ v_hub < v_rated:
+""")
 st.latex(r"P = P_{\text{rated}} \cdot \left( \frac{v_{\text{hub}} - v_{\text{cut_in}}}{v_{\text{rated}} - v_{\text{cut_in}}} \right)^3")
-st.markdown("  - If v_rated ≤ v_hub ≤ v_cut_out: P = P_rated")
-st.markdown("- Apply efficiencies:")
+st.markdown("""
+  - If v_rated ≤ v_hub ≤ v_cut_out: P = P_rated
+- Apply efficiencies:
+""")
 st.latex(r"P_{\text{wind}} = P \cdot \text{air_system_eff} \cdot \text{availability_frac} \cdot N_{\text{turbines}}")
-st.markdown("- (Interference: P_wind = 0 if solar > 50W.)")
-st.markdown("- Annual total:")
+st.markdown("""
+- (Interference: P_wind = 0 if solar > 50W.)
+- Annual total:
+""")
 st.latex(r"\text{Wind kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{wind},h}}{1000}")
 
 st.subheader("3. Hydro kWh/year")
-st.markdown("**What It Means**: The total energy (in kWh) produced by your hydrogenerator(s) using ocean currents over one year.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Synthetic currents (if used):")
+st.markdown("""
+**What It Means**: The total energy (in kWh) produced by your hydrogenerator(s) using ocean currents over one year.
+
+**How It's Calculated**:
+- Synthetic currents (if used):
+""")
 st.latex(r"v_{\text{current}} = \text{mean_v} + (\text{peak_v} - \text{mean_v}) \cdot \sin\left( \frac{2\pi \cdot t}{12.42 \cdot 3600} \right)")
-st.markdown("- Power:")
+st.markdown("""
+- Power:
+""")
 st.latex(r"P_{\text{hydro}} = 0.5 \cdot 1025 \cdot \pi \cdot \left(\frac{\text{rotor_diam_m}}{2}\right)^2 \cdot \text{Cp} \cdot v_{\text{current}}^3 \cdot \text{mech_elec_eff} \cdot \text{availability_frac} \cdot N_{\text{generators}}")
-st.markdown("- Annual total:")
+st.markdown("""
+- Annual total:
+""")
 st.latex(r"\text{Hydro kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{hydro},h}}{1000}")
 
 st.subheader("4. Total Gen kWh/year")
-st.markdown("**What It Means**: The total energy (in kWh) produced by all sources combined over one year.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Hourly total:")
+st.markdown("""
+**What It Means**: The total energy (in kWh) produced by all sources combined over one year.
+
+**How It's Calculated**:
+- Hourly total:
+""")
 st.latex(r"P_{\text{total},h} = P_{\text{AC},h} + P_{\text{wind},h} + P_{\text{hydro},h}")
-st.markdown("- Annual total:")
+st.markdown("""
+- Annual total:
+""")
 st.latex(r"\text{Total Gen kWh/year} = \frac{\sum_{h=1}^{8760} P_{\text{total},h}}{1000}")
 
 st.subheader("5. Excess kWh/year")
-st.markdown("**What It Means**: The total excess energy (in kWh) that can't be used or stored.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Hourly surplus:")
+st.markdown("""
+**What It Means**: The total excess energy (in kWh) that can't be used or stored.
+
+**How It's Calculated**:
+- Hourly surplus:
+""")
 st.latex(r"\text{surplus}_h = P_{\text{total},h} - \text{load}_h")
-st.markdown("  where load_h = (load_kwh_per_day · 1000) / 24.")
-st.markdown("- If surplus > 0:")
+st.markdown("where \\( \\text{load}_h = \\frac{\\text{load_kwh_per_day} \\cdot 1000}{24} \\).")
+st.markdown("""
+- If surplus > 0:
+""")
 st.latex(r"\text{chg_pwr}_h = \min(\text{surplus}_h, \text{max_charge_kW} \cdot 1000)")
 st.latex(r"\text{chg_Wh}_h = \text{chg_pwr}_h \cdot 1")
 st.latex(r"\text{chg_Wh_eff}_h = \min(\text{chg_Wh}_h \cdot \sqrt{\text{eta_roundtrip}}, E_{\text{max}} - \text{SOC}_h)")
 st.latex(r"\text{excess}_h = \text{surplus}_h - \text{chg_pwr}_h")
-st.markdown("- Annual total:")
+st.markdown("""
+- Annual total:
+""")
 st.latex(r"\text{Excess kWh/year} = \frac{\sum_{h=1}^{8760} \text{excess}_h}{1000}")
 
 st.subheader("6. Unmet kWh/year")
-st.markdown("**What It Means**: The total energy shortfall (in kWh) not met by generation or battery.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- If surplus < 0:")
+st.markdown("""
+**What It Means**: The total energy shortfall (in kWh) not met by generation or battery.
+
+**How It's Calculated**:
+- If surplus < 0:
+""")
 st.latex(r"\text{need_pwr}_h = \min(-\text{surplus}_h, \text{max_discharge_kW} \cdot 1000)")
 st.latex(r"\text{need_Wh}_h = \text{need_pwr}_h \cdot 1")
 st.latex(r"\text{used_Wh}_h = \min(\text{need_Wh}_h, \text{SOC}_h \cdot \sqrt{\text{eta_roundtrip}})")
 st.latex(r"\text{dis}_h = \text{used_Wh}_h")
 st.latex(r"\text{unmet}_h = \max(0, -\text{surplus}_h - \text{dis}_h)")
-st.markdown("- Annual total:")
+st.markdown("""
+- Annual total:
+""")
 st.latex(r"\text{Unmet kWh/year} = \frac{\sum_{h=1}^{8760} \text{unmet}_h}{1000}")
 
 st.subheader("7. SOC Min (%)")
-st.markdown("**What It Means**: The lowest battery charge level (percentage) during the year.")
-st.markdown("**How It's Calculated**:")
+st.markdown("""
+**What It Means**: The lowest battery charge level (percentage) during the year.
+
+**How It's Calculated**:
+""")
 st.latex(r"E_{\text{max}} = \text{capacity_Wh} \cdot \text{usable_DoD_frac}")
-st.markdown("- Update SOC hourly (clipped to [0, E_max]).")
+st.markdown("""
+- Update SOC hourly (clipped to [0, E_max]).
+""")
 st.latex(r"\text{SOC_frac}_h = \frac{\text{SOC}_h}{E_{\text{max}}}")
 st.latex(r"\text{SOC Min (%)} = \min_{h=1}^{8760} (\text{SOC_frac}_h \cdot 100)")
 
 st.subheader("8. SOC Max (%)")
-st.markdown("**What It Means**: The highest battery charge level (percentage) during the year.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Same as SOC Min:")
+st.markdown("""
+**What It Means**: The highest battery charge level (percentage) during the year.
+
+**How It's Calculated**:
+- Same as SOC Min:
+""")
 st.latex(r"\text{SOC Max (%)} = \max_{h=1}^{8760} (\text{SOC_frac}_h \cdot 100)")
 
 st.subheader("9. Approx Cycles/year")
-st.markdown("**What It Means**: Estimated number of full battery cycles in a year.")
-st.markdown("**How It's Calculated**:")
-st.markdown("- Hourly change:")
+st.markdown("""
+**What It Means**: Estimated number of full battery cycles in a year.
+
+**How It's Calculated**:
+- Hourly change:
+""")
 st.latex(r"\Delta \text{SOC}_h = |\text{SOC}_h - \text{SOC}_{h-1}|")
+st.markdown("""
+- 
+""")
 st.latex(r"\text{Approx Cycles/year} = \sum_{h=1}^{8760} \frac{\Delta \text{SOC}_h}{2 \cdot E_{\text{max}}}")
 
 st.markdown("""
