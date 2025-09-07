@@ -29,7 +29,7 @@ st.latex(r"T_{\text{cell}} = T_{\text{air}} + \frac{\text{POA}_{\text{global}} \
 st.markdown("Power per panel (W):")
 st.latex(r"P_{\text{panel}} = W_p \cdot \frac{\text{POA}_{\text{global}}}{1000} \cdot \left(1 + \frac{\gamma}{100} \cdot (T_{\text{cell}} - 25)\right)")
 st.markdown("Fouling reduction (if enabled):")
-st.latex(r"\text{Fouling}_{\%} = \text{fouled\_min\_%} + (\text{fouled\_max\_%} - \text{fouled\_min\_%}) \cdot \frac{\text{cycle\_position}}{\text{cleaning\_cycle\_days}}")
+st.latex(r"\text{Fouling}_{\%} = \texttt{fouled\_min\_\%} + \left(\texttt{fouled\_max\_\%} - \texttt{fouled\_min\_\%}\right) \cdot \frac{\texttt{cycle\_position}}{\texttt{cleaning\_cycle\_days}}")
 st.latex(r"P_{\text{panel}} \leftarrow P_{\text{panel}} \cdot \left(1 - \frac{\text{Fouling}_{\%}}{100}\right)")
 st.markdown("System losses and conversion:")
 st.latex(r"P_{\text{DC}} = P_{\text{panel}} \cdot N_{\text{panels}} \cdot (1 - \text{dc\_loss\_frac}) \cdot (1 - \text{misc\_pr\_frac})")
