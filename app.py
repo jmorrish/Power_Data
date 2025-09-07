@@ -11,7 +11,7 @@ from energy import (
 )
 
 st.set_page_config(page_title="Marine Hybrid Power Simulator", layout="wide")
-st.title("Marine Hybrid Power Simulator")
+st.title("Simulator")  # Changed for multi-page clarity
 st.caption("A tool for modelling solar, wind, hydrogeneration on marine platforms with batteries.")
 
 col_site, col_map = st.columns([1, 2])
